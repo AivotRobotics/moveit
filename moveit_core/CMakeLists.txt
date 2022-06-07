@@ -95,6 +95,7 @@ set(THIS_PACKAGE_INCLUDE_DIRS
     backtrace/include
     collision_detection/include
     collision_detection_fcl/include
+    collision_detection_acl/include
     ${BULLET_INC}
     constraint_samplers/include
     controller_manager/include
@@ -133,6 +134,7 @@ catkin_package(
     moveit_planning_interface
     moveit_collision_detection
     moveit_collision_detection_fcl
+    moveit_collision_detection_acl
     ${BULLET_LIB}
     moveit_kinematic_constraints
     moveit_planning_scene
@@ -221,6 +223,7 @@ add_subdirectory(robot_state)
 add_subdirectory(robot_trajectory)
 add_subdirectory(collision_detection)
 add_subdirectory(collision_detection_fcl)
+add_subdirectory(collision_detection_acl)
 add_subdirectory(kinematic_constraints)
 add_subdirectory(planning_scene)
 add_subdirectory(constraint_samplers)
