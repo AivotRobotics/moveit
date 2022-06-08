@@ -3,7 +3,6 @@
 #include <moveit/collision_detection/collision_env.h>
 #include <moveit/collision_detection_acl/collision_common.h>
 
-#include <thor_moveit_config/LinkPosShiftArray.h>
 #include "moveit/profiler/profiler.h"
 
 namespace collision_detection
