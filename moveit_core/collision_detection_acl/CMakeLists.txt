@@ -1,8 +1,7 @@
 set(MOVEIT_LIB_NAME moveit_collision_detection_acl)
 
 add_library(${MOVEIT_LIB_NAME}
-  src/collision_common.cpp
-  src/collision_env_acl.cpp
+        src/collision_env_acl.cpp
 )
 set_target_properties(${MOVEIT_LIB_NAME} PROPERTIES VERSION "${${PROJECT_NAME}_VERSION}")
 
