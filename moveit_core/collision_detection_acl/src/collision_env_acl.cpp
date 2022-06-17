@@ -27,9 +27,8 @@ CollisionEnvACL::CollisionEnvACL(const CollisionEnvACL& other, const WorldPtr& w
 
 void CollisionEnvACL::setCollisionCallback(const collision_detection::CollisionCallbackFn& collCbkFn)
 {
-  ROS_DEBUG_NAMED(LOGNAME, "setting CollisionCallback in Env obj %x", this);
+  ROS_DEBUG_STREAM_NAMED(LOGNAME, "setting CollisionCallback in Env obj " << this << " to " << collCbkFn);
   collCbkFn_ = collCbkFn;
-  ROS_DEBUG_STREAM_NAMED(LOGNAME, "collCbkFn is now " << collCbkFn_);
 }
 
 void CollisionEnvACL::checkSelfCollision(const CollisionRequest& req, CollisionResult& res,
