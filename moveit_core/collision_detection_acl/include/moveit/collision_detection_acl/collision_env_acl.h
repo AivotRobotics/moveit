@@ -1,14 +1,14 @@
 #pragma once
 
 #include <moveit/collision_detection/collision_env.h>
-#include <moveit/collision_detection_acl/collision_common.h>
 
 #include "moveit/profiler/profiler.h"
+#include "moveit/collision_detection_fcl/collision_env_fcl.h"
 
 namespace collision_detection
 {
 /** \brief ACL implementation of the CollisionEnv */
-class CollisionEnvACL : public CollisionEnv
+class CollisionEnvACL : public CollisionEnvFCL
 {
 public:
   CollisionEnvACL() = delete;
@@ -61,11 +61,6 @@ protected:
                                  const moveit::core::RobotState& state, const AllowedCollisionMatrix* acm) const;
 
 private:
-  /** \brief Callback function executed for each change to the world environment */
-  void notifyObjectChange(const ObjectConstPtr& obj, World::Action action);
-
-  World::ObserverHandle observer_handle_;
-  std::map<std::string, Eigen::Vector3d> linkPosShiftMap_;
   moveit::tools::Profiler profiler_;
 };
 }  // namespace collision_detection
