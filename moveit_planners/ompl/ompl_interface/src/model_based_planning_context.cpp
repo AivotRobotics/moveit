@@ -685,7 +685,8 @@ void ompl_interface::ModelBasedPlanningContext::postSolve()
 
 bool ompl_interface::ModelBasedPlanningContext::solve(planning_interface::MotionPlanResponse& res)
 {
-  if (solve(request_.allowed_planning_time, request_.num_planning_attempts))
+  ompl::base::PlannerStatus plannerStatus = ompl::base::PlannerStatus::UNKNOWN;
+  if (solve(request_.allowed_planning_time, request_.num_planning_attempts, &plannerStatus))
   {
     double ptime = getLastPlanTime();
     if (simplify_solutions_)
@@ -708,15 +709,26 @@ bool ompl_interface::ModelBasedPlanningContext::solve(planning_interface::Motion
   }
   else
   {
-    ROS_INFO_NAMED(LOGNAME, "Unable to solve the planning problem");
-    res.error_code_.val = moveit_msgs::MoveItErrorCodes::PLANNING_FAILED;
+    ROS_INFO_NAMED(LOGNAME, "Unable to solve the planning problem: %s", plannerStatus.asString().c_str());
+    if (plannerStatus == ompl::base::PlannerStatus::INVALID_START ||
+        plannerStatus == ompl::base::PlannerStatus::INVALID_GOAL ||
+        plannerStatus == ompl::base::PlannerStatus::UNRECOGNIZED_GOAL_TYPE) {
+      // For non-retryaable errors
+      // TODO: Add new error code to: http://docs.ros.org/en/noetic/api/moveit_msgs/html/msg/MoveItErrorCodes.html
+      // /opt/ros/noetic/include/moveit_msgs/MoveItErrorCodes.h
+      res.error_code_.val = moveit_msgs::MoveItErrorCodes::PLANNING_FAILED_UNRETRYABLE;
+    } else {
+      // For retryaable errors
+      res.error_code_.val = moveit_msgs::MoveItErrorCodes::PLANNING_FAILED;
+    }
     return false;
   }
 }
 
 bool ompl_interface::ModelBasedPlanningContext::solve(planning_interface::MotionPlanDetailedResponse& res)
 {
-  if (solve(request_.allowed_planning_time, request_.num_planning_attempts))
+  ompl::base::PlannerStatus plannerStatus = ompl::base::PlannerStatus::UNKNOWN;
+  if (solve(request_.allowed_planning_time, request_.num_planning_attempts, &plannerStatus))
   {
     res.trajectory_.reserve(3);
 
@@ -757,17 +769,28 @@ bool ompl_interface::ModelBasedPlanningContext::solve(planning_interface::Motion
   }
   else
   {
-    ROS_INFO_NAMED(LOGNAME, "Unable to solve the planning problem");
-    res.error_code_.val = moveit_msgs::MoveItErrorCodes::PLANNING_FAILED;
+    ROS_INFO_NAMED(LOGNAME, "Unable to solve the planning problem: %s", plannerStatus.asString().c_str());
+    if (plannerStatus == ompl::base::PlannerStatus::INVALID_START ||
+        plannerStatus == ompl::base::PlannerStatus::INVALID_GOAL ||
+        plannerStatus == ompl::base::PlannerStatus::UNRECOGNIZED_GOAL_TYPE) {
+      // For non-retryaable errors
+      // TODO: Add new error code to: http://docs.ros.org/en/noetic/api/moveit_msgs/html/msg/MoveItErrorCodes.html
+      // /opt/ros/noetic/include/moveit_msgs/MoveItErrorCodes.h
+      res.error_code_.val = moveit_msgs::MoveItErrorCodes::PLANNING_FAILED_UNRETRYABLE;
+    } else {
+      // For retryaable errors
+      res.error_code_.val = moveit_msgs::MoveItErrorCodes::PLANNING_FAILED;
+    }
     return false;
   }
 }
 
-bool ompl_interface::ModelBasedPlanningContext::solve(double timeout, unsigned int count)
+bool ompl_interface::ModelBasedPlanningContext::solve(double timeout, unsigned int count, ompl::base::PlannerStatus* plannerStatus)
 {
   moveit::tools::Profiler::ScopedBlock sblock("PlanningContext:Solve");
   ompl::time::point start = ompl::time::now();
   preSolve();
+  ROS_DEBUG_NAMED(LOGNAME, "ompl_interface::solve  Planmning attemps: %d, planning threads %d, timeout: %lf", count, max_planning_threads_, timeout);
 
   bool result = false;
   if (count <= 1 || multi_query_planning_enabled_)  // multi-query planners should always run in single instances
@@ -775,7 +798,12 @@ bool ompl_interface::ModelBasedPlanningContext::solve(double timeout, unsigned i
     ROS_DEBUG_NAMED(LOGNAME, "%s: Solving the planning problem once...", name_.c_str());
     ob::PlannerTerminationCondition ptc = constructPlannerTerminationCondition(timeout, start);
     registerTerminationCondition(ptc);
-    result = ompl_simple_setup_->solve(ptc) == ompl::base::PlannerStatus::EXACT_SOLUTION;
+    ompl::base::PlannerStatus planStatus = ompl_simple_setup_->solve(ptc);
+    if (plannerStatus) {
+      *plannerStatus = planStatus;
+    }
+    result = (planStatus == ompl::base::PlannerStatus::EXACT_SOLUTION);
+    ROS_INFO_NAMED(LOGNAME, "OMPL status %s", planStatus.asString().c_str());
     last_plan_time_ = ompl_simple_setup_->getLastPlanComputationTime();
     unregisterTerminationCondition();
   }
@@ -795,7 +823,11 @@ bool ompl_interface::ModelBasedPlanningContext::solve(double timeout, unsigned i
 
       ob::PlannerTerminationCondition ptc = constructPlannerTerminationCondition(timeout, start);
       registerTerminationCondition(ptc);
-      result = ompl_parallel_plan_.solve(ptc, 1, count, hybridize_) == ompl::base::PlannerStatus::EXACT_SOLUTION;
+      ompl::base::PlannerStatus planStatus = ompl_parallel_plan_.solve(ptc, 1, count, hybridize_);
+      if (plannerStatus) {
+        *plannerStatus = planStatus;
+      }
+      result = (planStatus == ompl::base::PlannerStatus::EXACT_SOLUTION);
       last_plan_time_ = ompl::time::seconds(ompl::time::now() - start);
       unregisterTerminationCondition();
     }
