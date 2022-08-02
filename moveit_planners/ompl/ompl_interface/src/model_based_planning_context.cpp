@@ -776,7 +776,7 @@ bool ompl_interface::ModelBasedPlanningContext::solve(planning_interface::Motion
       // For non-retryaable errors
       // TODO: Add new error code to: http://docs.ros.org/en/noetic/api/moveit_msgs/html/msg/MoveItErrorCodes.html
       // /opt/ros/noetic/include/moveit_msgs/MoveItErrorCodes.h
-      res.error_code_.val = -100;
+      res.error_code_.val = moveit_msgs::MoveItErrorCodes::PLANNING_FAILED_UNRETRYABLE;
     } else {
       // For retryaable errors
       res.error_code_.val = moveit_msgs::MoveItErrorCodes::PLANNING_FAILED;
