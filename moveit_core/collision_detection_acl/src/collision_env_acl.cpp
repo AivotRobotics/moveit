@@ -8,13 +8,11 @@ constexpr char LOGNAME[] = "collision_detection.acl";
 
 CollisionEnvACL::CollisionEnvACL(const moveit::core::RobotModelConstPtr& model, double padding, double scale)
   : CollisionEnvFCL(model, padding, scale)
-  , profiler_(true)
 {}
 
 CollisionEnvACL::CollisionEnvACL(const moveit::core::RobotModelConstPtr& model, const WorldPtr& world, double padding,
                                  double scale)
   : CollisionEnvFCL(model, world, padding, scale)
-  , profiler_(true)
 {}
 
 CollisionEnvACL::~CollisionEnvACL()
@@ -22,7 +20,6 @@ CollisionEnvACL::~CollisionEnvACL()
 
 CollisionEnvACL::CollisionEnvACL(const CollisionEnvACL& other, const WorldPtr& world)
   : CollisionEnvFCL(other, world)
-  , profiler_(true)
 {}
 
 void CollisionEnvACL::setCollisionCallback(const collision_detection::CollisionCallbackFn& collCbkFn)
