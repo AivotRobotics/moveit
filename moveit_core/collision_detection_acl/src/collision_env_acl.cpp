@@ -8,13 +8,11 @@ constexpr char LOGNAME[] = "collision_detection.acl";
 
 CollisionEnvACL::CollisionEnvACL(const moveit::core::RobotModelConstPtr& model, double padding, double scale)
   : CollisionEnvFCL(model, padding, scale)
-  , profiler_(true)
 {}
 
 CollisionEnvACL::CollisionEnvACL(const moveit::core::RobotModelConstPtr& model, const WorldPtr& world, double padding,
                                  double scale)
   : CollisionEnvFCL(model, world, padding, scale)
-  , profiler_(true)
 {}
 
 CollisionEnvACL::~CollisionEnvACL()
@@ -22,7 +20,6 @@ CollisionEnvACL::~CollisionEnvACL()
 
 CollisionEnvACL::CollisionEnvACL(const CollisionEnvACL& other, const WorldPtr& world)
   : CollisionEnvFCL(other, world)
-  , profiler_(true)
 {}
 
 void CollisionEnvACL::setCollisionCallback(const collision_detection::CollisionCallbackFn& collCbkFn)
@@ -47,14 +44,11 @@ void CollisionEnvACL::checkSelfCollisionHelper(const CollisionRequest& req, Coll
                                                const moveit::core::RobotState& state,
                                                const AllowedCollisionMatrix* acm) const
 {
+  moveit::tools::Profiler::ScopedBlock sblock("CollisionEnvACL::checkSelfCollision");
+
   ROS_DEBUG_ONCE_NAMED(LOGNAME, "checkSelfCollision");
 
-  moveit::tools::Profiler& prof = const_cast<moveit::tools::Profiler&>(profiler_);
-  prof.begin("self_collision");
-
   CollisionEnvFCL::checkSelfCollisionHelper(req, res, state, acm);
-
-  prof.end("self_collision");
 }
 
 void CollisionEnvACL::checkRobotCollision(const CollisionRequest& req, CollisionResult& res,
@@ -92,12 +86,8 @@ void CollisionEnvACL::checkRobotCollisionHelper(const CollisionRequest& req, Col
   assert(!collCbkFn_.empty());
   ROS_DEBUG_ONCE_NAMED(LOGNAME, "checkRobotCollision");
 
-  moveit::tools::Profiler& prof = const_cast<moveit::tools::Profiler&>(profiler_);
-  prof.begin("robot_collision");
-
+  moveit::tools::Profiler::ScopedBlock sblock("CollisionEnvACL::checkRobotCollision");
   collCbkFn_(req, res, state);
-
-  prof.end("robot_collision");
 
   if (req.distance)
   {

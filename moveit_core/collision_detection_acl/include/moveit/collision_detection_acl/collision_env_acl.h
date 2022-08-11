@@ -59,8 +59,5 @@ protected:
   /** \brief Bundles the different checkRobotCollision functions into a single function */
   void checkRobotCollisionHelper(const CollisionRequest& req, CollisionResult& res,
                                  const moveit::core::RobotState& state, const AllowedCollisionMatrix* acm) const;
-
-private:
-  moveit::tools::Profiler profiler_;
 };
 }  // namespace collision_detection
