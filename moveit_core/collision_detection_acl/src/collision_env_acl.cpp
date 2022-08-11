@@ -47,14 +47,11 @@ void CollisionEnvACL::checkSelfCollisionHelper(const CollisionRequest& req, Coll
                                                const moveit::core::RobotState& state,
                                                const AllowedCollisionMatrix* acm) const
 {
+  moveit::tools::Profiler::ScopedBlock sblock("CollisionEnvACL::checkSelfCollision");
+
   ROS_DEBUG_ONCE_NAMED(LOGNAME, "checkSelfCollision");
 
-  moveit::tools::Profiler& prof = const_cast<moveit::tools::Profiler&>(profiler_);
-  prof.begin("self_collision");
-
   CollisionEnvFCL::checkSelfCollisionHelper(req, res, state, acm);
-
-  prof.end("self_collision");
 }
 
 void CollisionEnvACL::checkRobotCollision(const CollisionRequest& req, CollisionResult& res,
@@ -92,12 +89,8 @@ void CollisionEnvACL::checkRobotCollisionHelper(const CollisionRequest& req, Col
   assert(!collCbkFn_.empty());
   ROS_DEBUG_ONCE_NAMED(LOGNAME, "checkRobotCollision");
 
-  moveit::tools::Profiler& prof = const_cast<moveit::tools::Profiler&>(profiler_);
-  prof.begin("robot_collision");
-
+  moveit::tools::Profiler::ScopedBlock sblock("CollisionEnvACL::checkRobotCollision");
   collCbkFn_(req, res, state);
-
-  prof.end("robot_collision");
 
   if (req.distance)
   {
