@@ -70,7 +70,7 @@ static inline bool validatePadding(double padding)
 namespace collision_detection
 {
 CollisionEnv::CollisionEnv(const moveit::core::RobotModelConstPtr& model, double padding, double scale)
-  : robot_model_(model), world_(new World()), world_const_(world_), collCbkFn_()
+  : robot_model_(model), world_(new World()), world_const_(world_)
 {
   if (!validateScale(scale))
     scale = 1.0;
@@ -87,7 +87,7 @@ CollisionEnv::CollisionEnv(const moveit::core::RobotModelConstPtr& model, double
 
 CollisionEnv::CollisionEnv(const moveit::core::RobotModelConstPtr& model, const WorldPtr& world, double padding,
                            double scale)
-  : robot_model_(model), world_(world), world_const_(world_), collCbkFn_()
+  : robot_model_(model), world_(world), world_const_(world_)
 {
   if (!validateScale(scale))
     scale = 1.0;
@@ -103,16 +103,10 @@ CollisionEnv::CollisionEnv(const moveit::core::RobotModelConstPtr& model, const 
 }
 
 CollisionEnv::CollisionEnv(const CollisionEnv& other, const WorldPtr& world)
-  : robot_model_(other.robot_model_), world_(world), world_const_(world), collCbkFn_(other.collCbkFn_)
+  : robot_model_(other.robot_model_) , world_(world) , world_const_(world)
 {
   link_padding_ = other.link_padding_;
   link_scale_ = other.link_scale_;
-}
-
-void CollisionEnv::setCollisionCallback(const CollisionCallbackFn& collCbkFn)
-{
-    // derived classes need to explicitly support collision callbacks by overriding this method
-    assert(false);
 }
 
 void CollisionEnv::setPadding(double padding)

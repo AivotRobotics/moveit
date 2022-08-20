@@ -47,8 +47,6 @@ namespace collision_detection
 {
 MOVEIT_CLASS_FORWARD(CollisionEnv);  // Defines CollisionEnvPtr, ConstPtr, WeakPtr... etc
 
-typedef boost::function<void(const CollisionRequest& req, CollisionResult& res, const moveit::core::RobotState&)> CollisionCallbackFn;
-
 /** \brief Provides the interface to the individual collision checking libraries. */
 class CollisionEnv
 {
@@ -76,8 +74,6 @@ public:
   virtual ~CollisionEnv()
   {
   }
-
-  virtual void setCollisionCallback(const CollisionCallbackFn& collCbkFn);
 
   /** @brief Check for robot self collision. Any collision between any pair of links is checked for, NO collisions are
    *   ignored.
@@ -323,8 +319,6 @@ protected:
 
   /** @brief The internally maintained map (from link names to scaling)*/
   std::map<std::string, double> link_scale_;
-
-  CollisionCallbackFn collCbkFn_;
 
 private:
   WorldPtr world_;             // The world always valid, never nullptr.

@@ -4,6 +4,7 @@
 
 #include "moveit/profiler/profiler.h"
 #include "moveit/collision_detection_fcl/collision_env_fcl.h"
+#include "moveit/collision_detection_acl/collision_callback.h"
 
 namespace collision_detection
 {
@@ -13,16 +14,15 @@ class CollisionEnvACL : public CollisionEnvFCL
 public:
   CollisionEnvACL() = delete;
 
-  CollisionEnvACL(const moveit::core::RobotModelConstPtr& model, double padding = 0.0, double scale = 1.0);
+  CollisionEnvACL(const moveit::core::RobotModelConstPtr& model, const WorldPtr& world,
+                  const collision_detection::acl::CollisionCallbackPtr& collisionCallback = {});
 
-  CollisionEnvACL(const moveit::core::RobotModelConstPtr& model, const WorldPtr& world, double padding = 0.0,
-                  double scale = 1.0);
+  CollisionEnvACL(const moveit::core::RobotModelConstPtr& model,
+                  const collision_detection::acl::CollisionCallbackPtr& collisionCallback = {});
 
   CollisionEnvACL(const CollisionEnvACL& other, const WorldPtr& world);
 
   ~CollisionEnvACL() override;
-
-  void setCollisionCallback(const collision_detection::CollisionCallbackFn& collFn);
 
   void checkSelfCollision(const CollisionRequest& req, CollisionResult& res,
                           const moveit::core::RobotState& state) const override;
@@ -59,5 +59,8 @@ protected:
   /** \brief Bundles the different checkRobotCollision functions into a single function */
   void checkRobotCollisionHelper(const CollisionRequest& req, CollisionResult& res,
                                  const moveit::core::RobotState& state, const AllowedCollisionMatrix* acm) const;
+private:
+  /** @brief The callback to perform collision checks */
+  acl::CollisionCallbackPtr collisionCallback_;
 };
 }  // namespace collision_detection
