@@ -680,7 +680,11 @@ bool IKConstraintSampler::callIK(const geometry_msgs::Pose& ik_query,
       solution[ik_joint_bijection[i]] = ik_sol[i];
     state.setJointGroupPositions(jmg_, solution);
 
-    return validate(state);
+    bool valid = validate(state);
+    if(!valid) {
+        moveit::tools::Profiler::Event("IKConstraintSampler::invalidIK");
+    }
+    return valid;
   }
   else
   {
@@ -691,6 +695,7 @@ bool IKConstraintSampler::callIK(const geometry_msgs::Pose& ik_query,
     else if (verbose_)
       ROS_INFO_NAMED("constraint_samplers", "IK failed");
   }
+  moveit::tools::Profiler::Event("IKConstraintSampler::noIK");
   return false;
 }
 
