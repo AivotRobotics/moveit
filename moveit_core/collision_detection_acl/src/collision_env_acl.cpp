@@ -6,13 +6,14 @@ namespace collision_detection
 static const std::string NAME = "ACL";
 constexpr char LOGNAME[] = "collision_detection.acl";
 
-CollisionEnvACL::CollisionEnvACL(const moveit::core::RobotModelConstPtr& model, double padding, double scale)
-  : CollisionEnvFCL(model, padding, scale)
+CollisionEnvACL::CollisionEnvACL(const moveit::core::RobotModelConstPtr& model, const WorldPtr& world, const collision_detection::acl::CollisionCallbackPtr& collisionCallback)
+  : CollisionEnvFCL(model, world)
+  , collisionCallback_(collisionCallback)
 {}
 
-CollisionEnvACL::CollisionEnvACL(const moveit::core::RobotModelConstPtr& model, const WorldPtr& world, double padding,
-                                 double scale)
-  : CollisionEnvFCL(model, world, padding, scale)
+CollisionEnvACL::CollisionEnvACL(const moveit::core::RobotModelConstPtr& model, const collision_detection::acl::CollisionCallbackPtr& collisionCallback)
+    : CollisionEnvFCL(model)
+    , collisionCallback_(collisionCallback)
 {}
 
 CollisionEnvACL::~CollisionEnvACL()
@@ -20,13 +21,8 @@ CollisionEnvACL::~CollisionEnvACL()
 
 CollisionEnvACL::CollisionEnvACL(const CollisionEnvACL& other, const WorldPtr& world)
   : CollisionEnvFCL(other, world)
+  , collisionCallback_(other.collisionCallback_)
 {}
-
-void CollisionEnvACL::setCollisionCallback(const collision_detection::CollisionCallbackFn& collCbkFn)
-{
-  ROS_DEBUG_STREAM_NAMED(LOGNAME, "setting CollisionCallback in Env obj " << this << " to " << collCbkFn);
-  collCbkFn_ = collCbkFn;
-}
 
 void CollisionEnvACL::checkSelfCollision(const CollisionRequest& req, CollisionResult& res,
                                          const moveit::core::RobotState& state) const
@@ -46,9 +42,8 @@ void CollisionEnvACL::checkSelfCollisionHelper(const CollisionRequest& req, Coll
 {
   moveit::tools::Profiler::ScopedBlock sblock("CollisionEnvACL::checkSelfCollision");
 
-  ROS_DEBUG_ONCE_NAMED(LOGNAME, "checkSelfCollision");
-
-  CollisionEnvFCL::checkSelfCollisionHelper(req, res, state, acm);
+  assert(collisionCallback_ && "Self collision callback must be set!");
+  collisionCallback_->checkSelfCollision(req, res, state);
 }
 
 void CollisionEnvACL::checkRobotCollision(const CollisionRequest& req, CollisionResult& res,
@@ -83,11 +78,10 @@ void CollisionEnvACL::checkRobotCollisionHelper(const CollisionRequest& req, Col
                                                 const moveit::core::RobotState& state,
                                                 const AllowedCollisionMatrix* acm) const
 {
-  assert(!collCbkFn_.empty());
-  ROS_DEBUG_ONCE_NAMED(LOGNAME, "checkRobotCollision");
-
   moveit::tools::Profiler::ScopedBlock sblock("CollisionEnvACL::checkRobotCollision");
-  collCbkFn_(req, res, state);
+
+  assert(collisionCallback_ && "Robot collision callback must be set!");
+  collisionCallback_->checkRobotCollision(req, res, state);
 
   if (req.distance)
   {
@@ -115,5 +109,13 @@ void CollisionEnvACL::setWorld(const WorldPtr& world)
 const std::string& CollisionDetectorAllocatorACL::getName() const
 {
   return NAME;
+}
+
+CollisionEnvPtr CollisionDetectorAllocatorACL::allocateEnv(const WorldPtr& world, const moveit::core::RobotModelConstPtr& robot_model) const {
+    return CollisionEnvPtr(new CollisionEnvACL(robot_model, world, const_cast<CollisionDetectorAllocatorACL*>(this)->shared_from_this()));
+}
+
+CollisionEnvPtr CollisionDetectorAllocatorACL::allocateEnv(const moveit::core::RobotModelConstPtr& robot_model) const {
+    return CollisionEnvPtr(new CollisionEnvACL(robot_model, const_cast<CollisionDetectorAllocatorACL*>(this)->shared_from_this()));
 }
 }  // namespace collision_detection
