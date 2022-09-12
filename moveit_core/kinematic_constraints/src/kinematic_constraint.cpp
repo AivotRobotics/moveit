@@ -45,6 +45,7 @@
 #include <functional>
 #include <limits>
 #include <memory>
+#include <moveit/profiler/profiler.h>
 
 namespace kinematic_constraints
 {
@@ -291,6 +292,10 @@ ConstraintEvaluationResult JointConstraint::decide(const moveit::core::RobotStat
                    "tolerance_above: %f, tolerance_below: %f",
                    result ? "satisfied" : "violated", joint_variable_name_.c_str(), current_joint_position,
                    joint_position_, joint_tolerance_above_, joint_tolerance_below_);
+
+  if(!result) {
+      moveit::tools::Profiler::Event("JointConstraint::invalid");
+  }
   return ConstraintEvaluationResult(result, constraint_weight_ * fabs(dif));
 }
 
@@ -486,6 +491,9 @@ static inline ConstraintEvaluationResult finishPositionConstraintDecision(const 
                    result ? "satisfied" : "violated", name.c_str(), desired.x(), desired.y(), desired.z(), pt.x(),
                    pt.y(), pt.z());
     ROS_INFO_NAMED("kinematic_constraints", "Differences %g %g %g", dx, dy, dz);
+  }
+  if(!result) {
+      moveit::tools::Profiler::Event("PositionConstraint::invalid");
   }
   return ConstraintEvaluationResult(result, weight * sqrt(dx * dx + dy * dy + dz * dz));
 }
@@ -735,6 +743,10 @@ ConstraintEvaluationResult OrientationConstraint::decide(const moveit::core::Rob
                    result ? "satisfied" : "violated", link_model_->getName().c_str(), q_des.x(), q_des.y(), q_des.z(),
                    q_des.w(), q_act.x(), q_act.y(), q_act.z(), q_act.w(), xyz_rotation(0), xyz_rotation(1),
                    xyz_rotation(2), absolute_x_axis_tolerance_, absolute_y_axis_tolerance_, absolute_z_axis_tolerance_);
+  }
+
+  if(!result) {
+      moveit::tools::Profiler::Event("OrientationConstraint::invalid");
   }
 
   return ConstraintEvaluationResult(result, constraint_weight_ * (xyz_rotation(0) + xyz_rotation(1) + xyz_rotation(2)));
