@@ -558,8 +558,10 @@ void samplingIkCallbackFnAdapter(moveit::core::RobotState* state, const moveit::
     solution[i] = ik_sol[bij[i]];
   if (constraint(state, jmg, &solution[0]))
     error_code.val = moveit_msgs::MoveItErrorCodes::SUCCESS;
-  else
-    error_code.val = moveit_msgs::MoveItErrorCodes::NO_IK_SOLUTION;
+  else {
+      error_code.val = moveit_msgs::MoveItErrorCodes::NO_IK_SOLUTION;
+      moveit::tools::Profiler::Event("IKConstraintSampler::invalidGroupState");
+  }
 }
 }  // namespace
 
