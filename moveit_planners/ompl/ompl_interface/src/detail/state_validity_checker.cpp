@@ -75,14 +75,20 @@ void ompl_interface::StateValidityChecker::setVerbose(bool flag)
 
 bool ompl_interface::StateValidityChecker::isValid(const ompl::base::State* state, bool verbose) const
 {
+  moveit::tools::Profiler::ScopedBlock sblock("StateValiditiChecker::isValid");
+
   // Use cached validity if it is available
-  if (state->as<ModelBasedStateSpace::StateType>()->isValidityKnown())
-    return state->as<ModelBasedStateSpace::StateType>()->isMarkedValid();
+  if (state->as<ModelBasedStateSpace::StateType>()->isValidityKnown()) {
+      moveit::tools::Profiler::Event("StateValidityChecker::stateValid_Cached");
+      return state->as<ModelBasedStateSpace::StateType>()->isMarkedValid();
+  }
+
 
   if (!si_->satisfiesBounds(state))
   {
     if (verbose)
       ROS_INFO_NAMED(LOGNAME, "State outside bounds");
+    moveit::tools::Profiler::Event("StateValidityChecker::stateOutsideBounds");
     const_cast<ob::State*>(state)->as<ModelBasedStateSpace::StateType>()->markInvalid();
     return false;
   }
@@ -94,6 +100,7 @@ bool ompl_interface::StateValidityChecker::isValid(const ompl::base::State* stat
   const kinematic_constraints::KinematicConstraintSetPtr& kset = planning_context_->getPathConstraints();
   if (kset && !kset->decide(*robot_state, verbose).satisfied)
   {
+    moveit::tools::Profiler::Event("StateValidityChecker::stateOutsidePath");
     const_cast<ob::State*>(state)->as<ModelBasedStateSpace::StateType>()->markInvalid();
     return false;
   }
@@ -101,6 +108,7 @@ bool ompl_interface::StateValidityChecker::isValid(const ompl::base::State* stat
   // check feasibility
   if (!planning_context_->getPlanningScene()->isStateFeasible(*robot_state, verbose))
   {
+    moveit::tools::Profiler::Event("StateValidityChecker::stateNotFeasible");
     const_cast<ob::State*>(state)->as<ModelBasedStateSpace::StateType>()->markInvalid();
     return false;
   }
@@ -111,10 +119,12 @@ bool ompl_interface::StateValidityChecker::isValid(const ompl::base::State* stat
       verbose ? collision_request_simple_verbose_ : collision_request_simple_, res, *robot_state);
   if (!res.collision)
   {
+    moveit::tools::Profiler::Event("StateValidityChecker::stateValid");
     const_cast<ob::State*>(state)->as<ModelBasedStateSpace::StateType>()->markValid();
   }
   else
   {
+    moveit::tools::Profiler::Event("StateValidityChecker::stateInCollision");
     const_cast<ob::State*>(state)->as<ModelBasedStateSpace::StateType>()->markInvalid();
   }
   return !res.collision;
@@ -122,6 +132,7 @@ bool ompl_interface::StateValidityChecker::isValid(const ompl::base::State* stat
 
 bool ompl_interface::StateValidityChecker::isValid(const ompl::base::State* state, double& dist, bool verbose) const
 {
+  moveit::tools::Profiler::ScopedBlock sblock("StateValiditiChecker::isValidWithDistance");
   // Use cached validity and distance if they are available
   if (state->as<ModelBasedStateSpace::StateType>()->isValidityKnown() &&
       state->as<ModelBasedStateSpace::StateType>()->isGoalDistanceKnown())
