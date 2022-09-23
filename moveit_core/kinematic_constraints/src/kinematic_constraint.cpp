@@ -478,6 +478,7 @@ bool PositionConstraint::equal(const KinematicConstraint& other, double margin) 
 // helper function to avoid code duplication
 static inline ConstraintEvaluationResult finishPositionConstraintDecision(const Eigen::Vector3d& pt,
                                                                           const Eigen::Vector3d& desired,
+                                                                          const std::vector<double>& dims,
                                                                           const std::string& name, double weight,
                                                                           bool result, bool verbose)
 {
@@ -487,10 +488,10 @@ static inline ConstraintEvaluationResult finishPositionConstraintDecision(const 
   if (verbose)
   {
     ROS_INFO_NAMED("kinematic_constraints",
-                   "Position constraint %s on link '%s'. Desired: %f, %f, %f, current: %f, %f, %f",
-                   result ? "satisfied" : "violated", name.c_str(), desired.x(), desired.y(), desired.z(), pt.x(),
-                   pt.y(), pt.z());
-    ROS_INFO_NAMED("kinematic_constraints", "Differences %g %g %g", dx, dy, dz);
+                   "Position constraint %s on link '%s'. Desired: x=%.3f, y=%.3f, z=%.3f, current: x=%.3f, y=%.3f, z=%.3f, "
+                   "differences: x=%.3g, y=%.3g, z=%.3g, tolerances: x=%.3g, y=%.3g, z=%.3g",
+                   result ? "satisfied" : "violated", name.c_str(), desired.x(), desired.y(), desired.z(), pt.x(), pt.y(), pt.z(), dx, dy, dz, dims[0], dims[1], dims[2]);
+//    ROS_INFO_NAMED("kinematic_constraints", "Differences %g %g %g", dx, dy, dz);
   }
   if(!result) {
       moveit::tools::Profiler::Event("PositionConstraint::invalid");
@@ -511,10 +512,10 @@ ConstraintEvaluationResult PositionConstraint::decide(const moveit::core::RobotS
       Eigen::Isometry3d tmp = state.getFrameTransform(constraint_frame_id_) * constraint_region_pose_[i];
       bool result = constraint_region_[i]->cloneAt(tmp)->containsPoint(pt, verbose);
       if (result || (i + 1 == constraint_region_pose_.size()))
-        return finishPositionConstraintDecision(pt, tmp.translation(), link_model_->getName(), constraint_weight_,
+        return finishPositionConstraintDecision(pt, tmp.translation(), constraint_region_[i]->getDimensions(), link_model_->getName(), constraint_weight_,
                                                 result, verbose);
       else
-        finishPositionConstraintDecision(pt, tmp.translation(), link_model_->getName(), constraint_weight_, result,
+        finishPositionConstraintDecision(pt, tmp.translation(), constraint_region_[i]->getDimensions(), link_model_->getName(), constraint_weight_, result,
                                          verbose);
     }
   }
@@ -524,10 +525,10 @@ ConstraintEvaluationResult PositionConstraint::decide(const moveit::core::RobotS
     {
       bool result = constraint_region_[i]->containsPoint(pt, true);
       if (result || (i + 1 == constraint_region_.size()))
-        return finishPositionConstraintDecision(pt, constraint_region_[i]->getPose().translation(),
+        return finishPositionConstraintDecision(pt, constraint_region_[i]->getPose().translation(), constraint_region_[i]->getDimensions(),
                                                 link_model_->getName(), constraint_weight_, result, verbose);
       else
-        finishPositionConstraintDecision(pt, constraint_region_[i]->getPose().translation(), link_model_->getName(),
+        finishPositionConstraintDecision(pt, constraint_region_[i]->getPose().translation(), constraint_region_[i]->getDimensions(), link_model_->getName(),
                                          constraint_weight_, result, verbose);
     }
   }
