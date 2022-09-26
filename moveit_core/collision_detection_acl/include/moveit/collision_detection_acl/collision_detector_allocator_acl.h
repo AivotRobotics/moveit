@@ -36,7 +36,12 @@ public:
       collisionCallback_->checkSelfCollision(req, res, state);
   }
 
+  virtual std::vector<moveit::core::RobotState> getUnstuckPath(const moveit::core::RobotState& startState) override {
+      assert(collisionCallback_ && "No collision callback is set!");
+      return collisionCallback_->getUnstuckPath(startState);
+  }
+
 private:
-    acl::CollisionCallbackPtr collisionCallback_;
+  acl::CollisionCallbackPtr collisionCallback_;
 };
 }  // namespace collision_detection
