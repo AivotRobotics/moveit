@@ -89,6 +89,14 @@ void CollisionEnvACL::checkRobotCollisionHelper(const CollisionRequest& req, Col
   }
 }
 
+std::vector<moveit::core::RobotState> CollisionEnvACL::getUnstuckPath(const moveit::core::RobotState& startState) const
+{
+    moveit::tools::Profiler::ScopedBlock sblock("CollisionEnvACL::getUnstuckPath");
+
+    assert(collisionCallback_ && "Robot collision callback must be set!");
+    return collisionCallback_->getUnstuckPath(startState);
+}
+
 void CollisionEnvACL::distanceSelf(const DistanceRequest& req, DistanceResult& res,
                                    const moveit::core::RobotState& state) const
 {
