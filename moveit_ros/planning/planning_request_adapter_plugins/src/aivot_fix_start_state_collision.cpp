@@ -104,21 +104,12 @@ namespace default_planner_request_adapters
                         res.trajectory_->setWayPointDurationFromPrevious(
                             0, std::min(max_dt_offset_, res.trajectory_->getAverageSegmentDuration()));
                         // TODO: there's an opportunity to optimize these vector operations
-                        std::stringstream ss;
-                        for (std::size_t added_index : added_path_index)
-                            ss << added_index << " ";
-                        ROS_INFO_STREAM_NAMED("Initial entries in added_path_index: [ %s]", ss.str().c_str());
-
                         for (auto prefix_state : prefixStates) {
                             res.trajectory_->addPrefixWayPoint(prefix_state, 0.0);
                             // we add a prefix point, so we need to bump any previously added index positions
                             for (std::size_t &added_index : added_path_index)
                                 added_index++;
                             added_path_index.push_back(0);
-                            std::stringstream ss;
-                            for (std::size_t added_index : added_path_index)
-                                ss << added_index << " ";
-                            ROS_INFO_STREAM_NAMED("Entries in added_path_index after iter: [ %s]", ss.str().c_str());
                         }
                         ROS_INFO_STREAM_NAMED(LOGNAME, "Planning with updated start state" <<
                             ", initialWaypoints: " << initialWayPointCount <<
