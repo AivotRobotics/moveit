@@ -43,12 +43,20 @@ namespace default_planner_request_adapters
             moveit::core::RobotState start_state = planning_scene->getCurrentState();
             moveit::core::robotStateMsgToRobotState(planning_scene->getTransforms(), req.start_state, start_state);
 
+            bool invokeStuckPlanner = false;
+
+            // check if start state is in collision
             collision_detection::CollisionRequest creq;
             creq.group_name = req.group_name;
             collision_detection::CollisionResult cres;
             planning_scene->checkCollision(creq, cres, start_state);
-            if (cres.collision)
-            {
+            if (cres.collision) {
+                // Rerun in verbose mode
+                collision_detection::CollisionRequest vcreq = creq;
+                collision_detection::CollisionResult vcres;
+                vcreq.verbose = true;
+                planning_scene->checkCollision(vcreq, vcres, start_state);
+
                 if (creq.group_name.empty()) {
                     ROS_INFO_NAMED(LOGNAME, "Start state appears to be in collision");
                 } else {
@@ -56,6 +64,21 @@ namespace default_planner_request_adapters
                             << creq.group_name);
                 }
 
+                invokeStuckPlanner = true;
+            }
+
+            if (!invokeStuckPlanner) {
+                // check if start state satisfies constraints
+                if (!planning_scene->isStateValid(start_state, req.path_constraints, req.group_name)) {
+                    ROS_INFO("Path constraints not satisfied for start state...");
+                    // Rerun in verbose mode
+                    planning_scene->isStateValid(start_state, req.path_constraints, req.group_name, true);
+
+                    invokeStuckPlanner = true;
+                }
+            }
+
+            if (invokeStuckPlanner) {
                 const collision_detection::CollisionEnvACL* pCollisionEnvAcl =
                     dynamic_cast<const collision_detection::CollisionEnvACL*>(planning_scene->getCollisionEnv().get());
                 assert(pCollisionEnvAcl != nullptr && "Expected collision env of type CollisionEnvACL");
@@ -81,12 +104,21 @@ namespace default_planner_request_adapters
                         res.trajectory_->setWayPointDurationFromPrevious(
                             0, std::min(max_dt_offset_, res.trajectory_->getAverageSegmentDuration()));
                         // TODO: there's an opportunity to optimize these vector operations
+                        std::stringstream ss;
+                        for (std::size_t added_index : added_path_index)
+                            ss << added_index << " ";
+                        ROS_INFO_STREAM_NAMED("Initial entries in added_path_index: [ %s]", ss.str().c_str());
+
                         for (auto prefix_state : prefixStates) {
                             res.trajectory_->addPrefixWayPoint(prefix_state, 0.0);
                             // we add a prefix point, so we need to bump any previously added index positions
                             for (std::size_t &added_index : added_path_index)
                                 added_index++;
                             added_path_index.push_back(0);
+                            std::stringstream ss;
+                            for (std::size_t added_index : added_path_index)
+                                ss << added_index << " ";
+                            ROS_INFO_STREAM_NAMED("Entries in added_path_index after iter: [ %s]", ss.str().c_str());
                         }
                         ROS_INFO_STREAM_NAMED(LOGNAME, "Planning with updated start state" <<
                             ", initialWaypoints: " << initialWayPointCount <<
