@@ -43,12 +43,20 @@ namespace default_planner_request_adapters
             moveit::core::RobotState start_state = planning_scene->getCurrentState();
             moveit::core::robotStateMsgToRobotState(planning_scene->getTransforms(), req.start_state, start_state);
 
+            bool invokeStuckPlanner = false;
+
+            // check if start state is in collision
             collision_detection::CollisionRequest creq;
             creq.group_name = req.group_name;
             collision_detection::CollisionResult cres;
             planning_scene->checkCollision(creq, cres, start_state);
-            if (cres.collision)
-            {
+            if (cres.collision) {
+                // Rerun in verbose mode
+                collision_detection::CollisionRequest vcreq = creq;
+                collision_detection::CollisionResult vcres;
+                vcreq.verbose = true;
+                planning_scene->checkCollision(vcreq, vcres, start_state);
+
                 if (creq.group_name.empty()) {
                     ROS_INFO_NAMED(LOGNAME, "Start state appears to be in collision");
                 } else {
@@ -56,6 +64,21 @@ namespace default_planner_request_adapters
                             << creq.group_name);
                 }
 
+                invokeStuckPlanner = true;
+            }
+
+            if (!invokeStuckPlanner) {
+                // check if start state satisfies constraints
+                if (!planning_scene->isStateValid(start_state, req.path_constraints, req.group_name)) {
+                    ROS_INFO("Path constraints not satisfied for start state...");
+                    // Rerun in verbose mode
+                    planning_scene->isStateValid(start_state, req.path_constraints, req.group_name, true);
+
+                    invokeStuckPlanner = true;
+                }
+            }
+
+            if (invokeStuckPlanner) {
                 const collision_detection::CollisionEnvACL* pCollisionEnvAcl =
                     dynamic_cast<const collision_detection::CollisionEnvACL*>(planning_scene->getCollisionEnv().get());
                 assert(pCollisionEnvAcl != nullptr && "Expected collision env of type CollisionEnvACL");
